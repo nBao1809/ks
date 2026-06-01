@@ -2,7 +2,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hotel_backend.settings.prduction')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hotel_backend.settings.production')
 
 django_asgi_app = get_asgi_application()
 

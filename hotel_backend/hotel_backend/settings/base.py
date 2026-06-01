@@ -80,9 +80,9 @@ TEMPLATES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': env('DB_NAME', default='coursedb'),
+        'NAME': env('DB_NAME', default='hotel_db'),
         'USER': env('DB_USER', default='root'),
-        'PASSWORD': env('DB_PASSWORD', default='12345678'),
+        'PASSWORD': env('DB_PASSWORD', default='1234'),
         'HOST': env('DB_HOST', default=''),
         'PORT': env('DB_PORT', default='3306'),
     },
