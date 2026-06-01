@@ -17,6 +17,11 @@ SECRET_KEY = env('DJANGO_SECRET_KEY', default='django-insecure-dev-only-change-i
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
+# Auto-allow Render public hostname to avoid DisallowedHost on first deploy.
+render_hostname = env('RENDER_EXTERNAL_HOSTNAME', default='').strip()
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
+
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
