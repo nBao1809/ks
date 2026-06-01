@@ -13,9 +13,6 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/v1/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui-v1'),
-    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
-    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),
     path('api/v1/health/', HealthView.as_view(), name='health'),
     path('api/v1/', include('app.urls')),
 ]

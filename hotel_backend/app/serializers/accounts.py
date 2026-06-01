@@ -33,7 +33,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
 
 
-from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
@@ -58,24 +57,6 @@ class RegisterSerializer(serializers.Serializer):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Mật khẩu xác nhận không khớp'})
         validate_password(attrs['password'])
-        return attrs
-
-
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, attrs):
-        user = authenticate(
-            request=self.context.get('request'),
-            username=attrs['email'],
-            password=attrs['password'],
-        )
-        if not user:
-            raise serializers.ValidationError('Email hoặc mật khẩu không đúng')
-        if not user.is_active:
-            raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa')
-        attrs['user'] = user
         return attrs
 
 
@@ -110,12 +91,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError({'new_password_confirm': 'Mật khẩu xác nhận không khớp'})
         return attrs
-
-
-class AuthResponseSerializer(serializers.Serializer):
-    access = serializers.CharField()
-    refresh = serializers.CharField()
-    user = UserSerializer()
 
 
 from rest_framework import serializers

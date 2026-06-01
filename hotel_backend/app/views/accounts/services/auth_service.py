@@ -7,11 +7,10 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
-from rest_framework_simplejwt.tokens import RefreshToken
 
+from app.core.exceptions import BusinessException
 from app.models import UserRole
 from app.models import PasswordResetToken, User
-from app.core.exceptions import BusinessException
 
 
 logger = logging.getLogger(__name__)
@@ -33,22 +32,6 @@ class AuthService:
             user.avatar = avatar
             user.save(update_fields=['avatar'])
         return user
-
-    @staticmethod
-    def build_tokens(user):
-        refresh = RefreshToken.for_user(user)
-        return {
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        }
-
-    @staticmethod
-    def logout(refresh_token):
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-        except Exception as exc:
-            raise BusinessException('Refresh token không hợp lệ', code='INVALID_TOKEN') from exc
 
     @staticmethod
     @transaction.atomic

@@ -12,7 +12,7 @@ from app.core.pagination import StandardPagination
 from app.core.schema import PARAM_PAGE, PARAM_PAGE_SIZE, PARAM_SEARCH, TAG_AMENITIES, TAG_ROOMS, TAG_ROOM_TYPES
 from app.models import Amenity, Room, RoomPrice, RoomType, RoomTypeImage
 from app.permissions import AmenityPermission, RoomPermission, RoomStatusPermission
-from app.rooms.schema_docs import AvailabilityResponseSerializer
+from app.core.schema import AvailabilityResponseSerializer
 from app.serializers.rooms import (
     AmenitySerializer,
     AmenityWriteSerializer,

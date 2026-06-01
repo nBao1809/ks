@@ -4,22 +4,16 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from app.permissions import CanManageStaff
-from app.accounts.schema_docs import (
+from app.core.schema import (
     AvatarResponseSerializer,
-    LoginResponseSerializer,
-    LogoutSerializer,
     MessageSerializer,
     PasswordForgotResponseSerializer,
-    RefreshTokenSerializer,
     StaffUpdateSerializer,
-    TokenRefreshResponseSerializer,
 )
 from app.serializers.accounts import (
     ChangePasswordSerializer,
-    LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
@@ -74,52 +68,6 @@ class RegisterView(APIView):
             avatar=data.get('avatar'),
         )
         return Response(UserSerializer(user, context={'request': request}).data, status=status.HTTP_201_CREATED)
-
-
-@extend_schema_view(
-    post=extend_schema(
-        tags=[TAG_AUTH],
-        summary='Đăng nhập',
-        description='Trả về access token, refresh token và thông tin user.',
-        request=LoginSerializer,
-        responses={200: LoginResponseSerializer},
-        auth=[],
-        examples=[
-            OpenApiExample('Manager', value={'email': 'manager@hotel.com', 'password': 'Admin@123'}, request_only=True),
-            OpenApiExample('Customer', value={'email': 'customer@hotel.com', 'password': 'Admin@123'}, request_only=True),
-        ],
-    ),
-)
-class LoginView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        tokens = AuthService.build_tokens(user)
-        return Response({
-            'access': tokens['access'],
-            'refresh': tokens['refresh'],
-            'user': UserSerializer(user, context={'request': request}).data,
-        })
-
-
-@extend_schema_view(
-    post=extend_schema(
-        tags=[TAG_AUTH],
-        summary='Đăng xuất',
-        description='Blacklist refresh token. Gửi refresh trong body.',
-        request=LogoutSerializer,
-        responses={204: None},
-    ),
-)
-class LogoutView(APIView):
-    def post(self, request):
-        refresh = request.data.get('refresh')
-        if refresh:
-            AuthService.logout(refresh)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
@@ -237,26 +185,6 @@ class AvatarUploadView(APIView):
         request.user.save(update_fields=['avatar'])
         url = request.build_absolute_uri(request.user.avatar.url)
         return Response({'avatar': url})
-
-
-class EnvelopeTokenRefreshView(TokenRefreshView):
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        tags=[TAG_AUTH],
-        summary='Refresh access token',
-        request=RefreshTokenSerializer,
-        responses={200: TokenRefreshResponseSerializer},
-        auth=[],
-        examples=[
-            OpenApiExample('Refresh', value={'refresh': '<paste_refresh_token>'}, request_only=True),
-        ],
-    )
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == 200:
-            response.data = {'access': response.data.get('access')}
-        return response
 
 
 @extend_schema_view(

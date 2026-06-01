@@ -1,4 +1,3 @@
-from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -10,8 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env(
     DEBUG=(bool, False),
-    JWT_ACCESS_MINUTES=(int, 15),
-    JWT_REFRESH_DAYS=(int, 7),
 )
 
 environ.Env.read_env(BASE_DIR / '.env')
@@ -33,8 +30,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'rest_framework',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
     'oauth2_provider',
     'drf_spectacular',
     'channels',
@@ -135,7 +130,6 @@ CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=DEBUG)
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -155,23 +149,25 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=env('JWT_ACCESS_MINUTES')),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=env('JWT_REFRESH_DAYS')),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
 OAUTH2_PROVIDER = {
     'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
     'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,
+    'SCOPES': {
+        'read': 'Read access',
+        'write': 'Write access',
+    },
+    'DEFAULT_SCOPES': ['read', 'write'],
 }
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Smart Hotel API',
     'VERSION': '1.0.0',
-    'DESCRIPTION': 'API quan ly khach san thong minh. Authorize bang JWT: login -> copy access token.',
+    'DESCRIPTION': (
+        'API quan ly khach san thong minh. '
+        'Authorize bang OAuth2 password grant. '
+        'Lay token tai /o/token/ (grant_type=password hoac refresh_token), '
+        'thu hoi token tai /o/revoke_token/.'
+    ),
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': r'/api/v1',
@@ -193,20 +189,40 @@ SPECTACULAR_SETTINGS = {
     ],
     'APPEND_COMPONENTS': {
         'securitySchemes': {
+            'OAuth2Password': {
+                'type': 'oauth2',
+                'flows': {
+                    'password': {
+                        'tokenUrl': '/o/token/',
+                        'scopes': {
+                            'read': 'Read access',
+                            'write': 'Write access',
+                        },
+                    },
+                },
+                'description': 'OAuth2 password grant. Lay token tai /o/token/.',
+            },
             'BearerAuth': {
                 'type': 'http',
                 'scheme': 'bearer',
-                'bearerFormat': 'JWT',
-                'description': 'JWT access token tu POST /api/v1/auth/login/',
+                'description': 'Dan access_token thu cong de goi API.',
             },
         },
     },
-    'SECURITY': [{'BearerAuth': []}],
+    'SECURITY': [
+        {'OAuth2Password': ['read', 'write']},
+        {'BearerAuth': []},
+    ],
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,
         'displayRequestDuration': True,
         'filter': True,
     },
+    # 'SWAGGER_UI_OAUTH2_CONFIG': {
+    #     'clientId': SWAGGER_OAUTH_CLIENT_ID,
+    #     'clientSecret': SWAGGER_OAUTH_CLIENT_SECRET,
+    #     'scopes': 'read write',
+    # },
 }
 
 EMAIL_BACKEND = env(

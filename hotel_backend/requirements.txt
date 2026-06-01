@@ -25,7 +25,6 @@ django-environ==0.13.0
 django-filter==24.3
 django-oauth-toolkit==2.4.0
 djangorestframework==3.17.1
-djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.29.0
 flasgger==0.9.7.1
 Flask==3.0.3

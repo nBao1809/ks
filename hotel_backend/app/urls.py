@@ -5,9 +5,6 @@ from app.views.accounts.views import (
     ChangePasswordView,
     CustomerDetailView,
     CustomerListView,
-    EnvelopeTokenRefreshView,
-    LoginView,
-    LogoutView,
     MeView,
     PasswordForgotView,
     PasswordResetView,
@@ -80,9 +77,6 @@ from app.views.services.views import (
 
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
-    path('auth/login/', LoginView.as_view(), name='auth-login'),
-    path('auth/token/refresh/', EnvelopeTokenRefreshView.as_view(), name='auth-refresh'),
-    path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/password/forgot/', PasswordForgotView.as_view(), name='auth-password-forgot'),
     path('auth/password/reset/', PasswordResetView.as_view(), name='auth-password-reset'),
     path('auth/password/change/', ChangePasswordView.as_view(), name='auth-password-change'),
