@@ -124,6 +124,10 @@ STORAGES = {
     },
 }
 
+# Backward-compatible keys for packages that still read legacy Django settings names.
+DEFAULT_FILE_STORAGE = STORAGES['default']['BACKEND']
+STATICFILES_STORAGE = STORAGES['staticfiles']['BACKEND']
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
