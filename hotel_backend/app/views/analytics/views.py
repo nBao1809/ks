@@ -25,6 +25,7 @@ from app.core.schema import TAG_ANALYTICS
             OpenApiParameter(name='year', type=int, location=OpenApiParameter.QUERY),
             OpenApiParameter(name='month', type=int, location=OpenApiParameter.QUERY, required=False),
             OpenApiParameter(name='quarter', type=int, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name='date', type=str, location=OpenApiParameter.QUERY, required=False, description='YYYY-MM-DD (for period=day)'),
         ],
         responses={200: RevenueReportSerializer},
     ),
@@ -37,10 +38,12 @@ class RevenueReportView(APIView):
         year = int(request.query_params.get('year', date.today().year))
         month = request.query_params.get('month')
         quarter = request.query_params.get('quarter')
+        target_date = request.query_params.get('date')
         return Response(ReportService.revenue(
             period, year,
             month=int(month) if month else None,
             quarter=int(quarter) if quarter else None,
+            target_date=datetime.strptime(target_date, '%Y-%m-%d').date() if target_date else None,
         ))
 
 

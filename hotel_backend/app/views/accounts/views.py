@@ -14,6 +14,7 @@ from app.core.schema import (
 )
 from app.serializers.accounts import (
     ChangePasswordSerializer,
+    CustomerDetailSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
@@ -324,7 +325,7 @@ class CustomerDetailView(APIView):
         user = User.objects.filter(pk=pk, role='customer').first()
         if not user:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        return Response(UserSerializer(user, context={'request': request}).data)
+        return Response(CustomerDetailSerializer(user, context={'request': request}).data)
 
 
 

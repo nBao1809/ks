@@ -26,10 +26,10 @@ class GuestService:
                 user.full_name = full_name
                 if phone:
                     user.phone = phone
-                user.save(update_fields=['full_name', 'phone', 'updated_at'])
+                user.save(update_fields=['full_name', 'phone'])
                 profile.address = address or profile.address
                 profile.notes = notes or profile.notes
-                profile.save(update_fields=['address', 'notes', 'updated_at'])
+                profile.save(update_fields=['address', 'notes'])
                 return user
 
         email = (email or '').strip().lower()
@@ -58,3 +58,58 @@ class GuestService:
             is_temporary=True,
         )
         return user
+
+    @staticmethod
+    @transaction.atomic
+    def upsert_profile_for_customer(user, national_id, address, notes=''):
+        national_id = (national_id or '').strip()
+        address = (address or '').strip()
+        notes = (notes or '').strip()
+
+        if not national_id or not address:
+            raise BusinessException('CCCD/Passport và địa chỉ là bắt buộc khi check-in', code='VALIDATION_ERROR', status_code=422)
+        if not user or user.role != UserRole.CUSTOMER:
+            raise BusinessException('Chỉ áp dụng cho tài khoản khách hàng', code='VALIDATION_ERROR', status_code=422)
+
+        profile = GuestProfile.objects.filter(user=user).first()
+        if profile:
+            current_national_id = (profile.national_id or '').strip()
+            if current_national_id and current_national_id != national_id:
+                raise BusinessException(
+                    'CCCD/Passport không khớp với tài khoản đã đặt phòng',
+                    code='NATIONAL_ID_MISMATCH',
+                    status_code=422,
+                )
+            if not current_national_id:
+                conflict = (
+                    GuestProfile.objects.select_related('user')
+                    .filter(national_id=national_id, user__is_active=True)
+                    .exclude(user_id=user.id)
+                    .first()
+                )
+                if conflict:
+                    raise BusinessException('CCCD/Passport đã thuộc tài khoản khách khác', code='NATIONAL_ID_EXISTS', status_code=409)
+                profile.national_id = national_id
+            profile.address = address
+            if notes:
+                profile.notes = notes
+            profile.is_temporary = False
+            profile.save(update_fields=['national_id', 'address', 'notes', 'is_temporary'])
+            return profile
+
+        conflict = (
+            GuestProfile.objects.select_related('user')
+            .filter(national_id=national_id, user__is_active=True)
+            .exclude(user_id=user.id)
+            .first()
+        )
+        if conflict:
+            raise BusinessException('CCCD/Passport đã thuộc tài khoản khách khác', code='NATIONAL_ID_EXISTS', status_code=409)
+
+        return GuestProfile.objects.create(
+            user=user,
+            national_id=national_id,
+            address=address,
+            notes=notes,
+            is_temporary=False,
+        )

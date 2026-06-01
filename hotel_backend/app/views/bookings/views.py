@@ -221,7 +221,17 @@ class BookingCheckInView(APIView):
 
     def post(self, request, pk):
         booking = get_object_or_404(Booking, pk=pk, is_active=True)
-        note = request.data.get('note', '')
+        serializer = BookingCheckInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        from app.views.accounts.services.guest_service import GuestService
+        GuestService.upsert_profile_for_customer(
+            booking.customer,
+            national_id=data['national_id'],
+            address=data['address'],
+            notes=data.get('note', ''),
+        )
+        note = data.get('note', '')
         booking = BookingService.transition(booking, BookingStatus.CHECKED_IN, request.user, note)
         return Response(BookingDetailSerializer(booking).data)
 

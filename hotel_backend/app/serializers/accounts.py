@@ -23,6 +23,28 @@ class UserSerializer(serializers.ModelSerializer):
         return None
 
 
+class CustomerDetailSerializer(UserSerializer):
+    guest_profile = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('guest_profile',)
+        read_only_fields = fields
+
+    def get_guest_profile(self, obj):
+        try:
+            profile = obj.guest_profile
+        except Exception:
+            profile = None
+        if not profile:
+            return None
+        return {
+            'national_id': profile.national_id,
+            'address': profile.address,
+            'notes': profile.notes,
+            'is_temporary': profile.is_temporary,
+        }
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

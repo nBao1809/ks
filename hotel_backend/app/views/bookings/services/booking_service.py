@@ -4,6 +4,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from app.models import UserRole
+from decimal import Decimal
+
+from django.db import transaction
+from django.utils import timezone
+
+from app.models import UserRole
 from app.models import User
 from app.models import Booking, BookingRoom, BookingStatus, BookingStatusHistory
 from app.core.exceptions import BusinessException
@@ -139,7 +145,7 @@ class BookingService:
         if nights < 1:
             raise BusinessException('check_out phải sau check_in', code='INVALID_DATE_RANGE')
 
-        initial_status = status or BookingStatus.CONFIRMED
+        initial_status = status or BookingStatus.CHECKED_IN
         booking = Booking.objects.create(
             booking_code=BookingService._generate_code(),
             customer=customer,
@@ -149,6 +155,7 @@ class BookingService:
             adults=adults,
             children=children,
             special_request=special_request or '',
+            checked_in_at=timezone.now(),
         )
         rooms = BookingService._allocate_room_ids(room_ids, check_in, check_out)
         total = Decimal('0')
@@ -163,7 +170,7 @@ class BookingService:
                 nights=nights,
                 subtotal=subtotal,
             )
-            room.status = RoomStatus.RESERVED if initial_status != BookingStatus.CHECKED_IN else RoomStatus.OCCUPIED
+            room.status = RoomStatus.OCCUPIED
             room.save(update_fields=['status', 'updated_at'])
             total += subtotal
 
