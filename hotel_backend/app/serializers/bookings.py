@@ -141,6 +141,8 @@ class BookingActionNoteSerializer(serializers.Serializer):
 
 
 class BookingCheckInSerializer(serializers.Serializer):
+    national_id = serializers.CharField(max_length=50)
+    address = serializers.CharField()
     note = serializers.CharField(required=False, allow_blank=True, default='')
 
 
