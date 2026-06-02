@@ -2,6 +2,7 @@ from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
 from urllib.request import urlopen
+import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -27,6 +28,8 @@ from app.views.payments.services.vnpay_service import VNPayService
 
 class PaymentService:
     _fonts_registered = False
+    _pdf_font_regular = 'Helvetica'
+    _pdf_font_bold = 'Helvetica-Bold'
     LOGO_URL = 'https://res.cloudinary.com/dblzpkokm/image/upload/v1779649199/hotel4_ejlhzz.jpg'
     COMPANY_PHONE = '0901 234 567'
     COMPANY_ADDRESS = '123 Ngô Gia Tự, P. 3, Q. 10, TP. Hồ Chí Minh'
@@ -57,15 +60,38 @@ class PaymentService:
     def _register_pdf_fonts():
         if PaymentService._fonts_registered:
             return
-        pdfmetrics.registerFont(TTFont('SmartHotel', r'C:\\Windows\\Fonts\\arial.ttf'))
-        pdfmetrics.registerFont(TTFont('SmartHotel-Bold', r'C:\\Windows\\Fonts\\arialbd.ttf'))
-        pdfmetrics.registerFontFamily(
-            'SmartHotel',
-            normal='SmartHotel',
-            bold='SmartHotel-Bold',
-            italic='SmartHotel',
-            boldItalic='SmartHotel-Bold',
-        )
+
+        # Use deployed fonts when available; fallback to built-in ReportLab fonts.
+        candidate_pairs = [
+            (
+                Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
+                Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+            ),
+            (
+                Path(r'C:\\Windows\\Fonts\\arial.ttf'),
+                Path(r'C:\\Windows\\Fonts\\arialbd.ttf'),
+            ),
+        ]
+
+        for normal_path, bold_path in candidate_pairs:
+            if not (normal_path.exists() and bold_path.exists()):
+                continue
+            try:
+                pdfmetrics.registerFont(TTFont('SmartHotel', str(normal_path)))
+                pdfmetrics.registerFont(TTFont('SmartHotel-Bold', str(bold_path)))
+                pdfmetrics.registerFontFamily(
+                    'SmartHotel',
+                    normal='SmartHotel',
+                    bold='SmartHotel-Bold',
+                    italic='SmartHotel',
+                    boldItalic='SmartHotel-Bold',
+                )
+                PaymentService._pdf_font_regular = 'SmartHotel'
+                PaymentService._pdf_font_bold = 'SmartHotel-Bold'
+                break
+            except Exception:
+                logging.getLogger(__name__).warning('Cannot register PDF fonts from %s', normal_path, exc_info=True)
+
         PaymentService._fonts_registered = True
 
     @staticmethod
@@ -94,11 +120,11 @@ class PaymentService:
             author='Smart Hotel',
         )
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name='InvoiceHeader', parent=styles['Title'], fontName='SmartHotel-Bold', fontSize=22, leading=26, textColor=colors.white))
-        styles.add(ParagraphStyle(name='InvoiceSubHeader', parent=styles['BodyText'], fontName='SmartHotel', fontSize=9.5, leading=13, textColor=colors.HexColor('#D7DBF0')))
-        styles.add(ParagraphStyle(name='InvoiceLabel', parent=styles['BodyText'], fontName='SmartHotel-Bold', fontSize=9.5, leading=12, textColor=colors.HexColor('#1A1A2E')))
-        styles.add(ParagraphStyle(name='InvoiceText', parent=styles['BodyText'], fontName='SmartHotel', fontSize=10.5, leading=14, textColor=colors.HexColor('#222222')))
-        styles.add(ParagraphStyle(name='InvoiceTotal', parent=styles['BodyText'], fontName='SmartHotel-Bold', fontSize=12, leading=15, textColor=colors.HexColor('#1A1A2E')))
+        styles.add(ParagraphStyle(name='InvoiceHeader', parent=styles['Title'], fontName=PaymentService._pdf_font_bold, fontSize=22, leading=26, textColor=colors.white))
+        styles.add(ParagraphStyle(name='InvoiceSubHeader', parent=styles['BodyText'], fontName=PaymentService._pdf_font_regular, fontSize=9.5, leading=13, textColor=colors.HexColor('#D7DBF0')))
+        styles.add(ParagraphStyle(name='InvoiceLabel', parent=styles['BodyText'], fontName=PaymentService._pdf_font_bold, fontSize=9.5, leading=12, textColor=colors.HexColor('#1A1A2E')))
+        styles.add(ParagraphStyle(name='InvoiceText', parent=styles['BodyText'], fontName=PaymentService._pdf_font_regular, fontSize=10.5, leading=14, textColor=colors.HexColor('#222222')))
+        styles.add(ParagraphStyle(name='InvoiceTotal', parent=styles['BodyText'], fontName=PaymentService._pdf_font_bold, fontSize=12, leading=15, textColor=colors.HexColor('#1A1A2E')))
 
         issue_date = invoice.issued_at.strftime('%d/%m/%Y %H:%M') if invoice.issued_at else ''
         logo = PaymentService._build_logo_image()
@@ -193,7 +219,7 @@ class PaymentService:
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E9ECF8')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1A1A2E')),
-            ('FONTNAME', (0, 0), (-1, -1), 'SmartHotel'),
+            ('FONTNAME', (0, 0), (-1, -1), PaymentService._pdf_font_regular),
             ('FONTSIZE', (0, 0), (-1, -1), 9.5),
             ('ALIGN', (1, 1), (1, -1), 'CENTER'),
             ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
