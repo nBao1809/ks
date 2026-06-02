@@ -6,7 +6,7 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate, TruncMonth
 from django.conf import settings
 
-from app.models import Booking, BookingStatus
+from app.models import Booking, BookingStatus, TaskStatus, HousekeepingTask
 from app.models import Payment, PaymentStatus
 from app.models import Room
 from app.models import ServiceOrder, ServiceOrderItem
